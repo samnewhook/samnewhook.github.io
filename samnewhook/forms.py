@@ -1,7 +1,7 @@
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, DateField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from samnewhook.models import User
 
@@ -70,3 +70,8 @@ class ResetPasswordForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Reset Password')
+
+
+class MovieSearchForm(FlaskForm):
+    year = DateField(label='Year', format='%Y', description='Search Year to get Top Ten Movies from.')
+    submit=SubmitField('Top Ten Movie Search')
