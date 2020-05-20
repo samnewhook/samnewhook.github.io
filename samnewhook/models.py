@@ -15,7 +15,9 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
+    tmdb_auth_token = db.Column(db.String(50), nullable=True, default='')
     posts = db.relationship('Post', backref='author', lazy=True)
+    movies = db.relationship('Movie', backref='reviewer', lazy=True)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'], expires_sec)
@@ -43,3 +45,13 @@ class Post(db.Model):
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
+
+
+class Movie(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seen = db.Column(db.Boolean, nullable=False, default=False)
+    review = db.Column(db.Integer, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    def __repr__(self):
+        return f"Movie('{self.id, self.user_id}')"

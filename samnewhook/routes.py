@@ -1,10 +1,12 @@
 from flask import render_template, url_for, flash, redirect, request, abort
 from samnewhook.forms import RegistrationForm, LoginForm, UpdateAccount, PostForm, RequestResetForm, ResetPasswordForm
 from samnewhook import app, db, bcrypt, mail
-from samnewhook.models import User, Post
+from samnewhook.models import User, Post, Movie
 from flask_login import login_user, current_user, logout_user, login_required
 import secrets
 import os
+import requests
+import json
 from PIL import Image
 from flask_mail import Message
 
@@ -46,11 +48,20 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user, remember=form.remember.data)
+            update_auth_token(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
+
+
+def update_auth_token(user):
+    auth_token_url = f"https://api.themoviedb.org/3/authentication/token/new?api_key={app.config['TMDB_KEY']}"
+    res = requests.get(auth_token_url)
+    req_token = json.loads(res.text)['request_token']
+    user.tmdb_auth_token = req_token
+    db.session.commit()
 
 
 @app.route("/logout")
@@ -193,3 +204,13 @@ def reset_token(token):
         flash('Your password has been updated! You are now able to login!', 'success')
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form)
+
+
+@app.route("/movie/<int:movie_id>")
+def movie(movie_id):
+    if not current_user.is_authenticated:
+        flash('Please Login or Register an account to start ranking movies!', 'warning')
+        return redirect(url_for('login'))
+    movie = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={app.config['TMDB_KEY']}&language=en-US")
+    mov = json.loads(movie.text)
+    return render_template('movie.html', title=mov['title'], description=mov['overview'])
